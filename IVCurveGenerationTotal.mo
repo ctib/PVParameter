@@ -200,7 +200,7 @@ with a specific unit to an output signal in another unit
 
         parameter Real k(start=1, unit="1")
           "Gain value multiplied with input signal";
-    public
+      public
         Interfaces.RealInput u "Input signal connector" annotation (Placement(
               transformation(extent={{-140,-20},{-100,20}})));
         Interfaces.RealOutput y "Output signal connector" annotation (Placement(
@@ -1430,7 +1430,7 @@ package BuildingSystems "Library for building energy and plant simulation"
                 fillPattern =                                                                                FillPattern.Solid),
           Text(extent={{-44,-56},{48,-84}},lineColor={0,0,255},fillColor={230,230,230},
                 fillPattern =                                                                        FillPattern.Solid,textString
-                =                                                                                                                  "%name"),
+                  =                                                                                                                "%name"),
           Text(extent={{-58,40},{48,-38}},lineColor={255,128,0},textString="IrrDir,Idif,angleDegInc = const")}),
       Documentation(info="<html>
 <p>
@@ -1622,6 +1622,21 @@ First implementation.
             tUl0 = -0.060,
             Eg = 1.107);
         end PhotovoltaicModules;
+
+        package PhotovoltaicIVCurves
+          "data sets with measured and theoretic IV curves for PV modules"
+
+          record DataSetIVCurves
+            parameter Modelica.SIunits.Temp_K TCel
+              "Cell temperature during measurement";
+            parameter BuildingSystems.Interfaces.RadiantEnergyFluenceRateInput ITot
+              "Effective total solar irradiation on solar cell";
+            parameter Modelica.SIunits.Voltage U[0]
+              "Discrete voltage values of the characteristic curve";
+            parameter Modelica.SIunits.Current I[0]
+              "Discrete current values of the characteristic curve";
+          end DataSetIVCurves;
+        end PhotovoltaicIVCurves;
       end Data;
 
       package Examples "Examples for photovoltaic component models"
@@ -1755,7 +1770,7 @@ First implementation.
             "Controlled azimuth angle of the PV module"
             annotation (Placement(transformation(extent={{-10,-10},{10,10}},rotation=-90,origin={-30,84}),
               iconTransformation(extent={{-10,-10},{10,10}},rotation=-90,origin={-40,80})));
-      protected
+        protected
             Modelica.Blocks.Interfaces.RealInput GSC_internal
               "Shading coefficient";
             Modelica.Blocks.Interfaces.RealInput angleDegAzi_internal
@@ -1788,7 +1803,7 @@ First implementation.
           etaMod = PField / ((radiationPort.IrrDif + radiationPort.IrrDir) * AField + 1.0e-6);
 
           annotation (Icon(graphics={Text(extent={{-38,-64},{46,-98}},lineColor={0,0,255},textString
-                  =                                                                                   "%name"),
+                    =                                                                                 "%name"),
             Rectangle(extent={{-50,90},{50,-68}},lineColor={215,215,215},fillColor={215,215,215},
                   fillPattern =                                                                                FillPattern.Solid),
             Rectangle(extent={{-46,28},{-18,0}},lineColor={0,0,255},fillColor={0,0,255},
@@ -1855,7 +1870,7 @@ First implementation.
               annotation (Placement(transformation(extent={{60,-50},{80,-30}}), iconTransformation(extent={{60,-50},{80,-30}})));
             Modelica.SIunits.Voltage Ut
               "Temperature voltage";
-        protected
+          protected
             final constant Real e(unit = "A.s") = Modelica.Constants.F/Modelica.Constants.N_A
               "Elementary charge";
             final constant Real k(unit = "J/K") = Modelica.Constants.R/Modelica.Constants.N_A
@@ -2123,7 +2138,7 @@ First implementation.
       annotation(defaultComponentName = "radiationPort",
       Icon(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,100}}), graphics={
       Ellipse(extent={{-100,100},{100,-100}}, fillColor={255,128,0},fillPattern
-              =                                                                 FillPattern.Solid,pattern=LinePattern.None)}),
+                =                                                               FillPattern.Solid,pattern=LinePattern.None)}),
       Diagram(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,100}}), graphics={
       Text(extent={{-110,110},{110,50}},lineColor={0,0,255},textString="%name",
               fillPattern =                                                                  FillPattern.Solid,fillColor={255,185,0}),
@@ -2154,6 +2169,32 @@ First implementation.
     connector Temp_KInput = Modelica.Blocks.Interfaces.RealInput(final quantity="ThermodynamicTemperature",final unit="K",min = 0.0, displayUnit="degC");
 
     connector Temp_KOutput = Modelica.Blocks.Interfaces.RealOutput(final quantity="ThermodynamicTemperature",final unit="K",min = 0.0, displayUnit="degC");
+    model GenOptInterface "Produces textual output files for GenOpt"
+      parameter String resultFileName = "result.txt"
+        "File on which data is present";
+      parameter String header = "Objective function value" "Header for result file";
+      parameter String File = "00_InfoFile_after_GenOpt.txt"
+        "File on which data is present";
+      Modelica.Blocks.Interfaces.RealInput costFunction
+        annotation (Placement(transformation(extent={{-20,-20},{20,20}},
+            rotation=-90,
+            origin={0,80})));
+    initial algorithm
+     if (resultFileName <> "") then
+      Modelica.Utilities.Files.removeFile(resultFileName);
+     end if;
+     Modelica.Utilities.Streams.print(fileName=resultFileName,string=header);
+     if (File <> "") then
+      Modelica.Utilities.Files.removeFile(File);
+     end if;
+    equation
+     when terminal() then Modelica.Utilities.Streams.print("f(x) = " +    realString(number=costFunction, minimumWidth=10, precision=20), resultFileName);
+        // INFORMATION FILE
+        Modelica.Utilities.Streams.print("-------------------------------------------------", File);
+        Modelica.Utilities.Streams.print("f(x):                       " +  realString(number=costFunction, minimumWidth=10, precision=20), File);
+      end when;
+      annotation (conversion(noneFromVersion=""));
+    end GenOptInterface;
   end Interfaces;
   annotation (
     version="2.0.0-beta",
@@ -2188,7 +2229,8 @@ The web page for this library is
 </p>
 </html>"));
 end BuildingSystems;
+
 model BuildingSystems_Technologies_Photovoltaics_Examples_IVCurveGeneration
  extends BuildingSystems.Technologies.Photovoltaics.Examples.IVCurveGeneration;
-  annotation(experiment(StartTime=0.0, StopTime=3.1536e+007),uses(BuildingSystems(version="2.0.0-beta")));
+  annotation(experiment(StopTime=20),                        uses(BuildingSystems(version="2.0.0-beta")));
 end BuildingSystems_Technologies_Photovoltaics_Examples_IVCurveGeneration;
