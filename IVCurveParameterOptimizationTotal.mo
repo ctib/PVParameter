@@ -567,7 +567,7 @@ with a specific unit to an output signal in another unit
 
         parameter Real k(start=1, unit="1")
           "Gain value multiplied with input signal";
-      public
+    public
         Interfaces.RealInput u "Input signal connector" annotation (Placement(
               transformation(extent={{-140,-20},{-100,20}})));
         Interfaces.RealOutput y "Output signal connector" annotation (Placement(
@@ -1023,7 +1023,7 @@ If parameter duration is set to 0.0, the limiting case of a Step signal is achie
           min=Modelica.Constants.eps)=1 "Time scale of first table column"
           annotation (Evaluate=true);
         extends Interfaces.SO;
-      protected
+    protected
         Real a "Interpolation coefficients a of actual interval (y=a*x+b)";
         Real b "Interpolation coefficients b of actual interval (y=a*x+b)";
         Integer last(start=1) "Last used lower grid index";
@@ -1046,7 +1046,7 @@ If parameter duration is set to 0.0, the limiting case of a Step signal is achie
           output Real b "Interpolation coefficients b (y=a*x + b)";
           output Real nextEventScaled "Next scaled event instant";
           output Integer next "New lower grid index";
-        protected
+      protected
           Integer columns=2 "Column to be interpolated";
           Integer ncol=2 "Number of columns to be interpolated";
           Integer nrow=size(table, 1) "Number of table rows";
@@ -1328,12 +1328,12 @@ usually requires a trimming calculation.
       extends Modelica.Icons.TypesPackage;
 
       type Init = enumeration(
-          NoInit
+        NoInit
             "No initialization (start values are used as guess values with fixed=false)",
-          SteadyState
+        SteadyState
             "Steady state initialization (derivatives of states are zero)",
-          InitialState "Initialization with initial states",
-          InitialOutput
+        InitialState   "Initialization with initial states",
+        InitialOutput
             "Initialization with initial outputs (and steady state of the states if possible)")
         "Enumeration defining initialization of a block" annotation (Evaluate=true,
         Documentation(info="<html>
@@ -1646,7 +1646,7 @@ Copyright &copy; 1998-2016, Modelica Association and DLR.
     function removeFile "Remove file (ignore call, if it does not exist)"
       extends Modelica.Icons.Function;
       input String fileName "Name of file that should be removed";
-      protected
+    protected
       Types.FileType fileType = Modelica.Utilities.Internal.FileSystem.stat(
                                               fileName);
     algorithm
@@ -1914,10 +1914,10 @@ Example:
       extends Modelica.Icons.TypesPackage;
 
       type FileType = enumeration(
-          NoFile "No file exists",
-          RegularFile "Regular file",
-          Directory "Directory",
-          SpecialFile "Special file (pipe, FIFO, device, etc.)")
+        NoFile   "No file exists",
+        RegularFile   "Regular file",
+        Directory   "Directory",
+        SpecialFile   "Special file (pipe, FIFO, device, etc.)")
         "Enumeration defining the type of a file";
       annotation (Documentation(info="<html>
 <p>
@@ -2732,7 +2732,7 @@ package BuildingSystems "Library for building energy and plant simulation"
                 fillPattern =                                                                                FillPattern.Solid),
           Text(extent={{-44,-56},{48,-84}},lineColor={0,0,255},fillColor={230,230,230},
                 fillPattern =                                                                        FillPattern.Solid,textString
-                  =                                                                                                                "%name"),
+                =                                                                                                                  "%name"),
           Text(extent={{-58,40},{48,-38}},lineColor={255,128,0},textString="IrrDir,Idif,angleDegInc = const")}),
       Documentation(info="<html>
 <p>
@@ -2914,8 +2914,8 @@ First implementation.
             c2 = 0.000152415667759,
             cs1 = 34.4880957621,
             cs2 = 0.00463314157705,
-            nCelSer = 36,
-            nCelPar = 1,
+            nCelSer = 9,
+            nCelPar = 3,
             height = 1.195,
             width = 0.545,
             Ik0 = 5.53,
@@ -2978,7 +2978,13 @@ First implementation.
             nModPar=1,
             nModSer=1,
             angleDegTil_constant=0,
-          redeclare Data.PhotovoltaicModules.SpectraVolt100M36S pvModuleData)
+          redeclare Data.PhotovoltaicModules.SpectraVolt100M36S pvModuleData(
+            c1=c1,
+            c2=c2,
+            cs1=cs1,
+            cs2=cs2,
+            RSer=RSer,
+            RPar=RPar))
             annotation (Placement(transformation(extent={{-56,34},{-36,54}})));
           BuildingSystems.Technologies.Photovoltaics.Data.PhotovoltaicIVCurves.SpectraVolt100M36S IVcurve_ref
              "measured IV curve from data";
@@ -2998,16 +3004,24 @@ First implementation.
               duration=pvField.pvModuleData.Ul0)
             "Increasing voltage until open circuit voltage"
             annotation (Placement(transformation(extent={{-24,46},{-32,54}})));
-        Modelica.Blocks.Math.MultiSum ISum(k={1,-1}, nu=2)
-          annotation (Placement(transformation(extent={{-38,26},{-42,30}})));
-        Modelica.Blocks.Math.Product Idiff_sq
-          annotation (Placement(transformation(extent={{-46,26},{-50,30}})));
-        Modelica.Blocks.Math.Sqrt sqrt1
-          annotation (Placement(transformation(extent={{-58,26},{-62,30}})));
-        Modelica.Blocks.Continuous.Integrator Idiff_sum
-          annotation (Placement(transformation(extent={{-52,26},{-56,30}})));
-        Interfaces.GenOptInterface genOptInterface
-          annotation (Placement(transformation(extent={{-76,14},{-66,24}})));
+          Modelica.Blocks.Math.MultiSum ISum(k={1,-1}, nu=2)
+            annotation (Placement(transformation(extent={{-38,26},{-42,30}})));
+          Modelica.Blocks.Math.Product Idiff_sq
+            annotation (Placement(transformation(extent={{-46,26},{-50,30}})));
+          Modelica.Blocks.Math.Sqrt sqrt1
+            annotation (Placement(transformation(extent={{-58,26},{-62,30}})));
+          Modelica.Blocks.Continuous.Integrator Idiff_sum
+            annotation (Placement(transformation(extent={{-52,26},{-56,30}})));
+          Interfaces.GenOptInterface genOptInterface
+            annotation (Placement(transformation(extent={{-72,18},{-64,26}})));
+        parameter Real c1=0.00504648450033 "1st coefficient IPho";
+        parameter Real c2=0.000152415667759 "2nd coefficient IPho";
+        parameter Real cs1=34.4880957621 "1st coefficient ISat1";
+        parameter Real cs2=0.00463314157705 "2nd coefficient ISat2";
+        parameter Modelica.SIunits.Resistance RSer=0.0137310098788
+          "Serial resistance";
+        parameter Modelica.SIunits.Resistance RPar=7.85288688794
+          "Parallel resistance";
         equation
           connect(pvField.TAmb, from_degC.y) annotation (Line(
               points={{-44,52},{-44,72},{-51.6,72}},
@@ -3018,22 +3032,22 @@ First implementation.
                   72}},            color={0,0,127}));
           connect(pvField.radiationPort, constRadiation.radiationPort) annotation (Line(
                 points={{-46,52},{-46,52},{-46,60},{-67.2,60}}, color={244,125,35}));
-        connect(increasVoltage.y, pvField.UField) annotation (Line(points={{
-                -32.4,50},{-32.4,50},{-40,50}}, color={0,0,127}));
-        connect(Idiff_sq.u1, ISum.y) annotation (Line(points={{-45.6,29.2},{-44,
-                29.2},{-44,28},{-42.34,28}}, color={0,0,127}));
-        connect(Idiff_sq.u2, ISum.y) annotation (Line(points={{-45.6,26.8},{-44,
-                26.8},{-44,28},{-42.34,28}}, color={0,0,127}));
-        connect(pvField.IField, ISum.u[1]) annotation (Line(points={{-40,48},{
-                -36,48},{-36,28.7},{-38,28.7}}, color={0,0,127}));
-        connect(IVcurve_reference.y, ISum.u[2]) annotation (Line(points={{-32.4,
-                22},{-36,22},{-36,27.3},{-38,27.3}}, color={0,0,127}));
-        connect(Idiff_sq.y, Idiff_sum.u)
-          annotation (Line(points={{-50.2,28},{-51.6,28}}, color={0,0,127}));
-        connect(Idiff_sum.y, sqrt1.u)
-          annotation (Line(points={{-56.2,28},{-57.6,28}}, color={0,0,127}));
-        connect(sqrt1.y, genOptInterface.costFunction) annotation (Line(points=
-                {{-62.2,28},{-68,28},{-71,28},{-71,23}}, color={0,0,127}));
+          connect(increasVoltage.y, pvField.UField) annotation (Line(points={{-32.4,50},
+                  {-32.4,50},{-40,50}}, color={0,0,127}));
+          connect(Idiff_sq.u1, ISum.y) annotation (Line(points={{-45.6,29.2},{-44,29.2},
+                  {-44,28},{-42.34,28}}, color={0,0,127}));
+          connect(Idiff_sq.u2, ISum.y) annotation (Line(points={{-45.6,26.8},{-44,26.8},
+                  {-44,28},{-42.34,28}}, color={0,0,127}));
+          connect(pvField.IField, ISum.u[1]) annotation (Line(points={{-40,48},{-36,48},
+                  {-36,28.7},{-38,28.7}}, color={0,0,127}));
+          connect(IVcurve_reference.y, ISum.u[2]) annotation (Line(points={{-32.4,22},{
+                  -36,22},{-36,27.3},{-38,27.3}}, color={0,0,127}));
+          connect(Idiff_sq.y, Idiff_sum.u)
+            annotation (Line(points={{-50.2,28},{-51.6,28}}, color={0,0,127}));
+          connect(Idiff_sum.y, sqrt1.u)
+            annotation (Line(points={{-56.2,28},{-57.6,28}}, color={0,0,127}));
+          connect(sqrt1.y, genOptInterface.costFunction) annotation (Line(points={{
+                  -62.2,28},{-68,28},{-68,25.2}}, color={0,0,127}));
             annotation (Placement(transformation(extent={{-20,68},{-28,76}})),
                      Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,0},{-20,100}}), graphics={
             Text(extent={{-60,8},{-60,4}},  lineColor={0,0,255},fontSize=22,
@@ -3041,8 +3055,8 @@ First implementation.
 optimized PV module parameters.")}),
             experiment(StopTime=22.73),
             __Dymola_Commands(file=
-                "Resources/Scripts/Dymola/Technologies/Photovoltaics/Examples/PVModuleParameterOpt.mos"
-              "Simulate and plot"),
+                  "Resources/Scripts/Dymola/Technologies/Photovoltaics/Examples/PVModuleParameterOpt.mos"
+                "Simulate and plot"),
         Documentation(info="<html>
 <p> This example tests the implementation of
 <a href=\"modelica://BuildingSystems.Technologies.Photovoltaics.PVModuleComplex\">
@@ -3127,7 +3141,7 @@ First implementation.
             "Controlled azimuth angle of the PV module"
             annotation (Placement(transformation(extent={{-10,-10},{10,10}},rotation=-90,origin={-30,84}),
               iconTransformation(extent={{-10,-10},{10,10}},rotation=-90,origin={-40,80})));
-        protected
+      protected
             Modelica.Blocks.Interfaces.RealInput GSC_internal
               "Shading coefficient";
             Modelica.Blocks.Interfaces.RealInput angleDegAzi_internal
@@ -3160,7 +3174,7 @@ First implementation.
           etaMod = PField / ((radiationPort.IrrDif + radiationPort.IrrDir) * AField + 1.0e-6);
 
           annotation (Icon(graphics={Text(extent={{-38,-64},{46,-98}},lineColor={0,0,255},textString
-                    =                                                                                 "%name"),
+                  =                                                                                   "%name"),
             Rectangle(extent={{-50,90},{50,-68}},lineColor={215,215,215},fillColor={215,215,215},
                   fillPattern =                                                                                FillPattern.Solid),
             Rectangle(extent={{-46,28},{-18,0}},lineColor={0,0,255},fillColor={0,0,255},
@@ -3227,7 +3241,7 @@ First implementation.
               annotation (Placement(transformation(extent={{60,-50},{80,-30}}), iconTransformation(extent={{60,-50},{80,-30}})));
             Modelica.SIunits.Voltage Ut
               "Temperature voltage";
-          protected
+        protected
             final constant Real e(unit = "A.s") = Modelica.Constants.F/Modelica.Constants.N_A
               "Elementary charge";
             final constant Real k(unit = "J/K") = Modelica.Constants.R/Modelica.Constants.N_A
@@ -3495,7 +3509,7 @@ First implementation.
       annotation(defaultComponentName = "radiationPort",
       Icon(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,100}}), graphics={
       Ellipse(extent={{-100,100},{100,-100}}, fillColor={255,128,0},fillPattern
-                =                                                               FillPattern.Solid,pattern=LinePattern.None)}),
+              =                                                                 FillPattern.Solid,pattern=LinePattern.None)}),
       Diagram(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,100}}), graphics={
       Text(extent={{-110,110},{110,50}},lineColor={0,0,255},textString="%name",
                 fillPattern =                                                                FillPattern.Solid,fillColor={255,185,0}),
@@ -3586,9 +3600,7 @@ The web page for this library is
 </p>
 </html>"));
 end BuildingSystems;
-
 model BuildingSystems_Technologies_Photovoltaics_Examples_IVCurveParameterOptimization
  extends BuildingSystems.Technologies.Photovoltaics.Examples.IVCurveParameterOptimization;
   annotation(experiment(StopTime=22.73),uses(BuildingSystems(version="2.0.0-beta")));
-end
-  BuildingSystems_Technologies_Photovoltaics_Examples_IVCurveParameterOptimization;
+end BuildingSystems_Technologies_Photovoltaics_Examples_IVCurveParameterOptimization;
