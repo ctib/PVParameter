@@ -1,3 +1,85 @@
+package ModelicaServices
+  "ModelicaServices (Default implementation) - Models and functions used in the Modelica Standard Library requiring a tool specific implementation"
+extends Modelica.Icons.Package;
+
+package Machine
+
+  final constant Real eps=1.e-15 "Biggest number such that 1.0 + eps = 1.0";
+  annotation (Documentation(info="<html>
+<p>
+Package in which processor specific constants are defined that are needed
+by numerical algorithms. Typically these constants are not directly used,
+but indirectly via the alias definition in
+<a href=\"modelica://Modelica.Constants\">Modelica.Constants</a>.
+</p>
+</html>"));
+end Machine;
+annotation (
+  Protection(access=Access.hide),
+  preferredView="info",
+  version="3.2.2",
+  versionBuild=0,
+  versionDate="2016-01-15",
+  dateModified = "2016-01-15 08:44:41Z",
+  revisionId="$Id:: package.mo 9141 2016-03-03 19:26:06Z #$",
+  uses(Modelica(version="3.2.2")),
+  conversion(
+    noneFromVersion="1.0",
+    noneFromVersion="1.1",
+    noneFromVersion="1.2",
+    noneFromVersion="3.2.1"),
+  Documentation(info="<html>
+<p>
+This package contains a set of functions and models to be used in the
+Modelica Standard Library that requires a tool specific implementation.
+These are:
+</p>
+
+<ul>
+<li> <a href=\"modelica://ModelicaServices.Animation.Shape\">Shape</a>
+     provides a 3-dim. visualization of elementary
+     mechanical objects. It is used in
+<a href=\"modelica://Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape\">Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape</a>
+     via inheritance.</li>
+
+<li> <a href=\"modelica://ModelicaServices.Animation.Surface\">Surface</a>
+     provides a 3-dim. visualization of
+     moveable parameterized surface. It is used in
+<a href=\"modelica://Modelica.Mechanics.MultiBody.Visualizers.Advanced.Surface\">Modelica.Mechanics.MultiBody.Visualizers.Advanced.Surface</a>
+     via inheritance.</li>
+
+<li> <a href=\"modelica://ModelicaServices.ExternalReferences.loadResource\">loadResource</a>
+     provides a function to return the absolute path name of an URI or a local file name. It is used in
+<a href=\"modelica://Modelica.Utilities.Files.loadResource\">Modelica.Utilities.Files.loadResource</a>
+     via inheritance.</li>
+
+<li> <a href=\"modelica://ModelicaServices.Machine\">ModelicaServices.Machine</a>
+     provides a package of machine constants. It is used in
+<a href=\"modelica://Modelica.Constants\">Modelica.Constants</a>.</li>
+
+<li> <a href=\"modelica://ModelicaServices.Types.SolverMethod\">Types.SolverMethod</a>
+     provides a string defining the integration method to solve differential equations in
+     a clocked discretized continuous-time partition (see Modelica 3.3 language specification).
+     It is not yet used in the Modelica Standard Library, but in the Modelica_Synchronous library
+     that provides convenience blocks for the clock operators of Modelica version &ge; 3.3.</li>
+</ul>
+
+<p>
+This implementation is targeted for Dymola.
+</p>
+
+<p>
+<b>Licensed by DLR and Dassault Syst&egrave;mes AB under the Modelica License 2</b><br>
+Copyright &copy; 2009-2016, DLR and Dassault Syst&egrave;mes AB.
+</p>
+
+<p>
+<i>This Modelica package is <u>free</u> software and the use is completely at <u>your own risk</u>; it can be redistributed and/or modified under the terms of the Modelica License 2. For license conditions (including the disclaimer of warranty) see <a href=\"modelica://Modelica.UsersGuide.ModelicaLicense2\">Modelica.UsersGuide.ModelicaLicense2</a> or visit <a href=\"https://www.modelica.org/licenses/ModelicaLicense2\"> https://www.modelica.org/licenses/ModelicaLicense2</a>.</i>
+</p>
+
+</html>"));
+end ModelicaServices;
+
 package Modelica "Modelica Standard Library - Version 3.2.2"
 extends Modelica.Icons.Package;
 
@@ -5,6 +87,193 @@ extends Modelica.Icons.Package;
   "Library of basic input/output control blocks (continuous, discrete, logical, table blocks)"
   import SI = Modelica.SIunits;
   extends Modelica.Icons.Package;
+
+    package Continuous
+    "Library of continuous control blocks with internal states"
+      import Modelica.Blocks.Interfaces;
+      import Modelica.SIunits;
+      extends Modelica.Icons.Package;
+
+      block Integrator "Output the integral of the input signal"
+        import Modelica.Blocks.Types.Init;
+        parameter Real k(unit="1")=1 "Integrator gain";
+
+        /* InitialState is the default, because it was the default in Modelica 2.2
+     and therefore this setting is backward compatible
+  */
+        parameter Modelica.Blocks.Types.Init initType=Modelica.Blocks.Types.Init.InitialState
+          "Type of initialization (1: no init, 2: steady state, 3,4: initial output)"     annotation(Evaluate=true,
+            Dialog(group="Initialization"));
+        parameter Real y_start=0 "Initial or guess value of output (= state)"
+          annotation (Dialog(group="Initialization"));
+        extends Interfaces.SISO(y(start=y_start));
+
+      initial equation
+        if initType == Init.SteadyState then
+           der(y) = 0;
+        elseif initType == Init.InitialState or
+               initType == Init.InitialOutput then
+          y = y_start;
+        end if;
+      equation
+        der(y) = k*u;
+        annotation (
+          Documentation(info="<html>
+<p>
+This blocks computes output <b>y</b> (element-wise) as
+<i>integral</i> of the input <b>u</b> multiplied with
+the gain <i>k</i>:
+</p>
+<pre>
+         k
+     y = - u
+         s
+</pre>
+
+<p>
+It might be difficult to initialize the integrator in steady state.
+This is discussed in the description of package
+<a href=\"modelica://Modelica.Blocks.Continuous#info\">Continuous</a>.
+</p>
+
+</html>"),       Icon(coordinateSystem(
+                preserveAspectRatio=true,
+                extent={{-100.0,-100.0},{100.0,100.0}}),
+              graphics={
+                Line(
+                  points={{-80.0,78.0},{-80.0,-90.0}},
+                  color={192,192,192}),
+                Polygon(
+                  lineColor={192,192,192},
+                  fillColor={192,192,192},
+                  fillPattern=FillPattern.Solid,
+                  points={{-80.0,90.0},{-88.0,68.0},{-72.0,68.0},{-80.0,90.0}}),
+                Line(
+                  points={{-90.0,-80.0},{82.0,-80.0}},
+                  color={192,192,192}),
+                Polygon(
+                  lineColor={192,192,192},
+                  fillColor={192,192,192},
+                  fillPattern=FillPattern.Solid,
+                  points={{90.0,-80.0},{68.0,-72.0},{68.0,-88.0},{90.0,-80.0}}),
+                Text(
+                  lineColor={192,192,192},
+                  extent={{0.0,-70.0},{60.0,-10.0}},
+                  textString="I"),
+                Text(
+                  extent={{-150.0,-150.0},{150.0,-110.0}},
+                  textString="k=%k"),
+                Line(
+                  points={{-80.0,-80.0},{80.0,80.0}},
+                  color={0,0,127})}),
+          Diagram(coordinateSystem(
+              preserveAspectRatio=true,
+              extent={{-100,-100},{100,100}}), graphics={
+              Rectangle(extent={{-60,60},{60,-60}}, lineColor={0,0,255}),
+              Line(points={{-100,0},{-60,0}}, color={0,0,255}),
+              Line(points={{60,0},{100,0}}, color={0,0,255}),
+              Text(
+                extent={{-36,60},{32,2}},
+                lineColor={0,0,0},
+                textString="k"),
+              Text(
+                extent={{-32,0},{36,-58}},
+                lineColor={0,0,0},
+                textString="s"),
+              Line(points={{-46,0},{46,0}})}));
+      end Integrator;
+      annotation (
+        Documentation(info="<html>
+<p>
+This package contains basic <b>continuous</b> input/output blocks
+described by differential equations.
+</p>
+
+<p>
+All blocks of this package can be initialized in different
+ways controlled by parameter <b>initType</b>. The possible
+values of initType are defined in
+<a href=\"modelica://Modelica.Blocks.Types.Init\">Modelica.Blocks.Types.Init</a>:
+</p>
+
+<table border=1 cellspacing=0 cellpadding=2>
+  <tr><td valign=\"top\"><b>Name</b></td>
+      <td valign=\"top\"><b>Description</b></td></tr>
+
+  <tr><td valign=\"top\"><b>Init.NoInit</b></td>
+      <td valign=\"top\">no initialization (start values are used as guess values with fixed=false)</td></tr>
+
+  <tr><td valign=\"top\"><b>Init.SteadyState</b></td>
+      <td valign=\"top\">steady state initialization (derivatives of states are zero)</td></tr>
+
+  <tr><td valign=\"top\"><b>Init.InitialState</b></td>
+      <td valign=\"top\">Initialization with initial states</td></tr>
+
+  <tr><td valign=\"top\"><b>Init.InitialOutput</b></td>
+      <td valign=\"top\">Initialization with initial outputs (and steady state of the states if possible)</td></tr>
+</table>
+
+<p>
+For backward compatibility reasons the default of all blocks is
+<b>Init.NoInit</b>, with the exception of Integrator and LimIntegrator
+where the default is <b>Init.InitialState</b> (this was the initialization
+defined in version 2.2 of the Modelica standard library).
+</p>
+
+<p>
+In many cases, the most useful initial condition is
+<b>Init.SteadyState</b> because initial transients are then no longer
+present. The drawback is that in combination with a non-linear
+plant, non-linear algebraic equations occur that might be
+difficult to solve if appropriate guess values for the
+iteration variables are not provided (i.e., start values with fixed=false).
+However, it is often already useful to just initialize
+the linear blocks from the Continuous blocks library in SteadyState.
+This is uncritical, because only linear algebraic equations occur.
+If Init.NoInit is set, then the start values for the states are
+interpreted as <b>guess</b> values and are propagated to the
+states with fixed=<b>false</b>.
+</p>
+
+<p>
+Note, initialization with Init.SteadyState is usually difficult
+for a block that contains an integrator
+(Integrator, LimIntegrator, PI, PID, LimPID).
+This is due to the basic equation of an integrator:
+</p>
+
+<pre>
+  <b>initial equation</b>
+     <b>der</b>(y) = 0;   // Init.SteadyState
+  <b>equation</b>
+     <b>der</b>(y) = k*u;
+</pre>
+
+<p>
+The steady state equation leads to the condition that the input to the
+integrator is zero. If the input u is already (directly or indirectly) defined
+by another initial condition, then the initialization problem is <b>singular</b>
+(has none or infinitely many solutions). This situation occurs often
+for mechanical systems, where, e.g., u = desiredSpeed - measuredSpeed and
+since speed is both a state and a derivative, it is always defined by
+Init.InitialState or Init.SteadyState initialization.
+</p>
+
+<p>
+In such a case, <b>Init.NoInit</b> has to be selected for the integrator
+and an additional initial equation has to be added to the system
+to which the integrator is connected. E.g., useful initial conditions
+for a 1-dim. rotational inertia controlled by a PI controller are that
+<b>angle</b>, <b>speed</b>, and <b>acceleration</b> of the inertia are zero.
+</p>
+
+</html>"),     Icon(graphics={Line(
+              origin={0.061,4.184},
+              points={{81.939,36.056},{65.362,36.056},{14.39,-26.199},{-29.966,
+                  113.485},{-65.374,-61.217},{-78.061,-78.184}},
+              color={95,95,95},
+              smooth=Smooth.Bezier)}));
+    end Continuous;
 
     package Interfaces
     "Library of connectors and partial models for input/output blocks"
@@ -72,6 +341,36 @@ Connector with one output signal of type Real.
 </p>
 </html>"));
 
+      connector RealVectorInput = input Real
+        "Real input connector used for vector of connectors" annotation (
+        defaultComponentName="u",
+        Icon(graphics={Ellipse(
+              extent={{-100,100},{100,-100}},
+              lineColor={0,0,127},
+              fillColor={0,0,127},
+              fillPattern=FillPattern.Solid)}, coordinateSystem(
+            extent={{-100,-100},{100,100}},
+            preserveAspectRatio=true,
+            initialScale=0.2)),
+        Diagram(coordinateSystem(
+            preserveAspectRatio=false,
+            initialScale=0.2,
+            extent={{-100,-100},{100,100}}), graphics={Text(
+              extent={{-10,85},{-10,60}},
+              lineColor={0,0,127},
+              textString="%name"), Ellipse(
+              extent={{-50,50},{50,-50}},
+              lineColor={0,0,127},
+              fillColor={0,0,127},
+              fillPattern=FillPattern.Solid)}),
+        Documentation(info="<html>
+<p>
+Real input connector that is used for a vector of connectors,
+for example <a href=\"modelica://Modelica.Blocks.Interfaces.PartialRealMISO\">PartialRealMISO</a>,
+and has therefore a different icon as RealInput connector.
+</p>
+</html>"));
+
       partial block SO "Single Output continuous control block"
         extends Modelica.Blocks.Icons.Block;
 
@@ -84,6 +383,74 @@ Block has one continuous Real output signal.
 </html>"));
 
       end SO;
+
+      partial block SISO "Single Input Single Output continuous control block"
+        extends Modelica.Blocks.Icons.Block;
+
+        RealInput u "Connector of Real input signal" annotation (Placement(
+              transformation(extent={{-140,-20},{-100,20}})));
+        RealOutput y "Connector of Real output signal" annotation (Placement(
+              transformation(extent={{100,-10},{120,10}})));
+        annotation (Documentation(info="<html>
+<p>
+Block has one continuous Real input and one continuous Real output signal.
+</p>
+</html>"));
+      end SISO;
+
+      partial block SI2SO
+        "2 Single Input / 1 Single Output continuous control block"
+        extends Modelica.Blocks.Icons.Block;
+
+        RealInput u1 "Connector of Real input signal 1" annotation (Placement(
+              transformation(extent={{-140,40},{-100,80}})));
+        RealInput u2 "Connector of Real input signal 2" annotation (Placement(
+              transformation(extent={{-140,-80},{-100,-40}})));
+        RealOutput y "Connector of Real output signal" annotation (Placement(
+              transformation(extent={{100,-10},{120,10}})));
+
+        annotation (Documentation(info="<html>
+<p>
+Block has two continuous Real input signals u1 and u2 and one
+continuous Real output signal y.
+</p>
+</html>"));
+
+      end SI2SO;
+
+      partial block PartialRealMISO
+        "Partial block with a RealVectorInput and a RealOutput signal"
+
+        parameter Integer significantDigits(min=1) = 3
+          "Number of significant digits to be shown in dynamic diagram layer for y"
+          annotation (Dialog(tab="Advanced"));
+        parameter Integer nu(min=0) = 0 "Number of input connections"
+          annotation (Dialog(connectorSizing=true), HideResult=true);
+        Modelica.Blocks.Interfaces.RealVectorInput u[nu]
+          annotation (Placement(transformation(extent={{-120,70},{-80,-70}})));
+        Modelica.Blocks.Interfaces.RealOutput y
+          annotation (Placement(transformation(extent={{100,-17},{134,17}})));
+        annotation (Icon(coordinateSystem(
+              preserveAspectRatio=true,
+              extent={{-100,-100},{100,100}},
+              initialScale=0.06), graphics={
+              Text(
+                extent={{110,-50},{300,-70}},
+                lineColor={0,0,0},
+                textString=DynamicSelect(" ", String(y, significantDigits=
+                    significantDigits))),
+              Text(
+                extent={{-250,170},{250,110}},
+                textString="%name",
+                lineColor={0,0,255}),
+              Rectangle(
+                extent={{-100,100},{100,-100}},
+                lineColor={255,137,0},
+                lineThickness=5.0,
+                fillColor={255,255,255},
+                borderPattern=BorderPattern.Raised,
+                fillPattern=FillPattern.Solid)}));
+      end PartialRealMISO;
 
       partial block PartialConversionBlock
         "Partial block defining the interface for conversion blocks"
@@ -244,6 +611,163 @@ input <i>u</i>:
                   textString="k",
                   lineColor={0,0,255})}));
       end Gain;
+
+      block MultiSum "Sum of Reals: y = k[1]*u[1] + k[2]*u[2] + ... + k[n]*u[n]"
+        extends Modelica.Blocks.Interfaces.PartialRealMISO;
+        parameter Real k[nu]=fill(1, nu) "Input gains";
+      equation
+        if size(u, 1) > 0 then
+          y = k*u;
+        else
+          y = 0;
+        end if;
+
+        annotation (Icon(graphics={Text(
+                extent={{-200,-110},{200,-140}},
+                lineColor={0,0,0},
+                fillColor={255,213,170},
+                fillPattern=FillPattern.Solid,
+                textString="%k"), Text(
+                extent={{-72,68},{92,-68}},
+                lineColor={0,0,0},
+                fillColor={255,213,170},
+                fillPattern=FillPattern.Solid,
+                textString="+")}), Documentation(info="<html>
+<p>
+This blocks computes the scalar Real output \"y\" as sum of the elements of the
+Real input signal vector u:
+</p>
+<blockquote><pre>
+y = k[1]*u[1] + k[2]*u[2] + ... k[N]*u[N];
+</pre></blockquote>
+
+<p>
+The input connector is a vector of Real input signals.
+When a connection line is drawn, the dimension of the input
+vector is enlarged by one and the connection is automatically
+connected to this new free index (thanks to the
+connectorSizing annotation).
+</p>
+
+<p>
+The usage is demonstrated, e.g., in example
+<a href=\"modelica://Modelica.Blocks.Examples.RealNetwork1\">Modelica.Blocks.Examples.RealNetwork1</a>.
+</p>
+
+<p>
+If no connection to the input connector \"u\" is present,
+the output is set to zero: y=0.
+</p>
+
+</html>"));
+      end MultiSum;
+
+      block Product "Output product of the two inputs"
+        extends Interfaces.SI2SO;
+
+      equation
+        y = u1*u2;
+        annotation (
+          Documentation(info="<html>
+<p>
+This blocks computes the output <b>y</b> (element-wise)
+as <i>product</i> of the corresponding elements of
+the two inputs <b>u1</b> and <b>u2</b>:
+</p>
+<pre>
+    y = u1 * u2;
+</pre>
+
+</html>"),Icon(coordinateSystem(
+              preserveAspectRatio=true,
+              extent={{-100,-100},{100,100}}), graphics={
+              Line(points={{-100,60},{-40,60},{-30,40}}, color={0,0,127}),
+              Line(points={{-100,-60},{-40,-60},{-30,-40}}, color={0,0,127}),
+              Line(points={{50,0},{100,0}}, color={0,0,127}),
+              Line(points={{-30,0},{30,0}}),
+              Line(points={{-15,25.99},{15,-25.99}}),
+              Line(points={{-15,-25.99},{15,25.99}}),
+              Ellipse(lineColor={0,0,127}, extent={{-50,-50},{50,50}})}),
+          Diagram(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{
+                  100,100}}), graphics={Rectangle(
+                  extent={{-100,-100},{100,100}},
+                  lineColor={0,0,255},
+                  fillColor={255,255,255},
+                  fillPattern=FillPattern.Solid),Line(points={{-100,60},{-40,60},{-30,
+                40}}, color={0,0,255}),Line(points={{-100,-60},{-40,-60},{-30,-40}},
+                color={0,0,255}),Line(points={{50,0},{100,0}}, color={0,0,255}),
+                Line(points={{-30,0},{30,0}}),Line(points={{-15,
+                25.99},{15,-25.99}}),Line(points={{-15,-25.99},{15,
+                25.99}}),Ellipse(extent={{-50,50},{50,-50}},
+                lineColor={0,0,255})}));
+      end Product;
+
+      block Sqrt "Output the square root of the input (input >= 0 required)"
+        extends Interfaces.SISO;
+
+      equation
+        y = sqrt(u);
+        annotation (
+          defaultComponentName="sqrt1",
+          Icon(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,
+                  100}}), graphics={
+              Line(points={{-90,-80},{68,-80}}, color={192,192,192}),
+              Polygon(
+                points={{90,-80},{68,-72},{68,-88},{90,-80}},
+                lineColor={192,192,192},
+                fillColor={192,192,192},
+                fillPattern=FillPattern.Solid),
+              Line(
+                points={{-80,-80},{-79.2,-68.7},{-78.4,-64},{-76.8,-57.3},{-73.6,-47.9},
+                    {-67.9,-36.1},{-59.1,-22.2},{-46.2,-6.49},{-28.5,10.7},{-4.42,
+                    30},{27.7,51.3},{69.5,74.7},{80,80}},
+                smooth=Smooth.Bezier),
+              Polygon(
+                points={{-80,90},{-88,68},{-72,68},{-80,90}},
+                lineColor={192,192,192},
+                fillColor={192,192,192},
+                fillPattern=FillPattern.Solid),
+              Line(points={{-80,-88},{-80,68}}, color={192,192,192}),
+              Text(
+                extent={{-8,-4},{64,-52}},
+                lineColor={192,192,192},
+                textString="sqrt")}),
+          Diagram(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{
+                  100,100}}), graphics={Line(points={{-92,-80},{84,-80}}, color={
+                192,192,192}),Polygon(
+                  points={{100,-80},{84,-74},{84,-86},{100,-80}},
+                  lineColor={192,192,192},
+                  fillColor={192,192,192},
+                  fillPattern=FillPattern.Solid),Line(points={{-80,-80},{-79.2,-68.7},
+                {-78.4,-64},{-76.8,-57.3},{-73.6,-47.9},{-67.9,-36.1},{-59.1,-22.2},
+                {-46.2,-6.49},{-28.5,10.7},{-4.42,30},{27.7,51.3},{69.5,74.7},{80,
+                80}}),Polygon(
+                  points={{-80,98},{-86,82},{-74,82},{-80,98}},
+                  lineColor={192,192,192},
+                  fillColor={192,192,192},
+                  fillPattern=FillPattern.Solid),Line(points={{-80,-90},{-80,84}},
+                color={192,192,192}),Text(
+                  extent={{-71,98},{-44,78}},
+                  lineColor={160,160,164},
+                  textString="y"),Text(
+                  extent={{60,-52},{84,-72}},
+                  lineColor={160,160,164},
+                  textString="u")}),
+          Documentation(info="<html>
+<p>
+This blocks computes the output <b>y</b>
+as <i>square root</i> of the input <b>u</b>:
+</p>
+<pre>
+    y = <b>sqrt</b>( u );
+</pre>
+<p>
+All elements of the input vector shall be zero or positive.
+Otherwise an error occurs.
+</p>
+
+</html>"));
+      end Sqrt;
       annotation (Documentation(info="<html>
 <p>
 This package contains basic <b>mathematical operations</b>,
@@ -487,6 +1011,262 @@ If parameter duration is set to 0.0, the limiting case of a Step signal is achie
 </p>
 </html>"));
       end Ramp;
+
+      block TimeTable
+        "Generate a (possibly discontinuous) signal by linear interpolation in a table"
+
+        parameter Real table[:, 2] = fill(0.0, 0, 2)
+          "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+        parameter Real offset=0 "Offset of output signal";
+        parameter SIunits.Time startTime=0 "Output = offset for time < startTime";
+        parameter Modelica.SIunits.Time timeScale(
+          min=Modelica.Constants.eps)=1 "Time scale of first table column"
+          annotation (Evaluate=true);
+        extends Interfaces.SO;
+      protected
+        Real a "Interpolation coefficients a of actual interval (y=a*x+b)";
+        Real b "Interpolation coefficients b of actual interval (y=a*x+b)";
+        Integer last(start=1) "Last used lower grid index";
+        discrete SIunits.Time nextEvent(start=0, fixed=true) "Next event instant";
+        discrete Real nextEventScaled(start=0, fixed=true)
+          "Next scaled event instant";
+        Real timeScaled "Scaled time";
+
+        function getInterpolationCoefficients
+          "Determine interpolation coefficients and next time event"
+          extends Modelica.Icons.Function;
+          input Real table[:, 2] "Table for interpolation";
+          input Real offset "y-offset";
+          input Real startTimeScaled "Scaled time-offset";
+          input Real timeScaled "Actual scaled time instant";
+          input Integer last "Last used lower grid index";
+          input Real TimeEps
+            "Relative epsilon to check for identical time instants";
+          output Real a "Interpolation coefficients a (y=a*x + b)";
+          output Real b "Interpolation coefficients b (y=a*x + b)";
+          output Real nextEventScaled "Next scaled event instant";
+          output Integer next "New lower grid index";
+        protected
+          Integer columns=2 "Column to be interpolated";
+          Integer ncol=2 "Number of columns to be interpolated";
+          Integer nrow=size(table, 1) "Number of table rows";
+          Integer next0;
+          Real tp;
+          Real dt;
+        algorithm
+          next := last;
+          nextEventScaled := timeScaled - TimeEps*abs(timeScaled);
+          // in case there are no more time events
+          tp := timeScaled + TimeEps*abs(timeScaled) - startTimeScaled;
+
+          if tp < 0.0 then
+            // First event not yet reached
+            nextEventScaled := startTimeScaled;
+            a := 0;
+            b := offset;
+          elseif nrow < 2 then
+            // Special action if table has only one row
+            a := 0;
+            b := offset + table[1, columns];
+          else
+
+            // Find next time event instant. Note, that two consecutive time instants
+            // in the table may be identical due to a discontinuous point.
+            while next < nrow and tp >= table[next, 1] loop
+              next := next + 1;
+            end while;
+
+            // Define next time event, if last table entry not reached
+            if next < nrow then
+              nextEventScaled := startTimeScaled + table[next, 1];
+            end if;
+
+            // Determine interpolation coefficients
+            next0 := next - 1;
+            dt := table[next, 1] - table[next0, 1];
+            if dt <= TimeEps*abs(table[next, 1]) then
+              // Interpolation interval is not big enough, use "next" value
+              a := 0;
+              b := offset + table[next, columns];
+            else
+              a := (table[next, columns] - table[next0, columns])/dt;
+              b := offset + table[next0, columns] - a*table[next0, 1];
+            end if;
+          end if;
+          // Take into account startTimeScaled "a*(time - startTime) + b"
+          b := b - a*startTimeScaled;
+        end getInterpolationCoefficients;
+      algorithm
+        timeScaled := time/timeScale;
+        when {time >= pre(nextEvent),initial()} then
+          (a,b,nextEventScaled,last) := getInterpolationCoefficients(
+              table,
+              offset,
+              startTime/timeScale,
+              timeScaled,
+              last,
+              100*Modelica.Constants.eps);
+          nextEvent := nextEventScaled*timeScale;
+        end when;
+      equation
+        y = a*timeScaled + b;
+        annotation (
+          Icon(coordinateSystem(
+              preserveAspectRatio=true,
+              extent={{-100,-100},{100,100}}), graphics={
+              Line(points={{-80,68},{-80,-80}}, color={192,192,192}),
+              Polygon(
+                points={{-80,90},{-88,68},{-72,68},{-80,90}},
+                lineColor={192,192,192},
+                fillColor={192,192,192},
+                fillPattern=FillPattern.Solid),
+              Line(points={{-90,-70},{82,-70}}, color={192,192,192}),
+              Polygon(
+                points={{90,-70},{68,-62},{68,-78},{90,-70}},
+                lineColor={192,192,192},
+                fillColor={192,192,192},
+                fillPattern=FillPattern.Solid),
+              Rectangle(
+                extent={{-48,70},{2,-50}},
+                lineColor={255,255,255},
+                fillColor={192,192,192},
+                fillPattern=FillPattern.Solid),
+              Line(points={{-48,-50},{-48,70},{52,70},{52,-50},{-48,-50},{-48,-20},
+                    {52,-20},{52,10},{-48,10},{-48,40},{52,40},{52,70},{2,70},{2,-51}}),
+              Text(
+                extent={{-150,-150},{150,-110}},
+                lineColor={0,0,0},
+                textString="offset=%offset")}),
+          Diagram(coordinateSystem(
+              preserveAspectRatio=true,
+              extent={{-100,-100},{100,100}}), graphics={
+              Polygon(
+                points={{-80,90},{-85,68},{-74,68},{-80,90}},
+                lineColor={95,95,95},
+                fillColor={95,95,95},
+                fillPattern=FillPattern.Solid),
+              Line(points={{-80,68},{-80,-80}}, color={95,95,95}),
+              Line(points={{-90,-70},{82,-70}}, color={95,95,95}),
+              Polygon(
+                points={{88,-70},{68,-65},{68,-74},{88,-70}},
+                lineColor={95,95,95},
+                fillColor={95,95,95},
+                fillPattern=FillPattern.Solid),
+              Rectangle(
+                extent={{-20,90},{30,-30}},
+                lineColor={255,255,255},
+                fillColor={192,192,192},
+                fillPattern=FillPattern.Solid),
+              Line(points={{-20,-30},{-20,90},{80,90},{80,-30},{-20,-30},{-20,0},{
+                    80,0},{80,30},{-20,30},{-20,60},{80,60},{80,90},{30,90},{30,-31}}),
+              Text(
+                extent={{-70,-42},{-32,-54}},
+                lineColor={0,0,0},
+                textString="offset"),
+              Polygon(
+                points={{-31,-30},{-33,-40},{-28,-40},{-31,-30}},
+                lineColor={95,95,95},
+                fillColor={95,95,95},
+                fillPattern=FillPattern.Solid),
+              Polygon(
+                points={{-31,-70},{-34,-60},{-29,-60},{-31,-70},{-31,-70}},
+                lineColor={95,95,95},
+                fillColor={95,95,95},
+                fillPattern=FillPattern.Solid),
+              Line(points={{-31,-32},{-31,-70}}, color={95,95,95}),
+              Line(points={{-20,-30},{-20,-70}}, color={95,95,95}),
+              Text(
+                extent={{-38,-73},{8,-83}},
+                lineColor={0,0,0},
+                textString="startTime"),
+              Line(points={{-20,-30},{-80,-30}}, color={95,95,95}),
+              Text(
+                extent={{-76,93},{-44,75}},
+                lineColor={0,0,0},
+                textString="y"),
+              Text(
+                extent={{66,-78},{90,-88}},
+                lineColor={0,0,0},
+                textString="time"),
+              Text(
+                extent={{-15,83},{24,68}},
+                lineColor={0,0,0},
+                textString="time"),
+              Text(
+                extent={{33,83},{76,67}},
+                lineColor={0,0,0},
+                textString="y")}),
+              Documentation(info="<html>
+<p>
+This block generates an output signal by <b>linear interpolation</b> in
+a table. The time points and function values are stored in a matrix
+<strong><code>table[i,j]</code></strong>, where the first column table[:,1] contains the
+time points and the second column contains the data to be interpolated.
+The table interpolation has the following properties:
+</p>
+<ul>
+<li>The time points need to be <b>monotonically increasing</b>. </li>
+<li><b>Discontinuities</b> are allowed, by providing the same
+    time point twice in the table. </li>
+<li>Values <b>outside</b> of the table range, are computed by
+    <b>extrapolation</b> through the last or first two points of the
+    table.</li>
+<li>If the table has only <b>one row</b>, no interpolation is performed and
+    the function value is just returned independently of the
+    actual time instant.</li>
+<li>Via parameters <strong><code>startTime</code></strong> and <strong><code>offset</code></strong> the curve defined
+    by the table can be shifted both in time and in the ordinate value.</li>
+<li>The first point in time <strong>always</strong> has to be set to <strong><code>0</code></strong>, e.g.,
+    <strong><code>table=[1,1;2,2]</code></strong> is <strong>illegal</strong>. If you want to
+    shift the time table in time use the  <strong><code>startTime</code></strong> parameter instead.</li>
+<li>The table is implemented in a numerically sound way by
+    generating <b>time events</b> at interval boundaries.
+    This generates continuously differentiable values for the integrator.</li>
+<li>Via parameter <b>timeScale</b> the first column of the table array can
+    be scaled, e.g. if the table array is given in hours (instead of seconds)
+    <b>timeScale</b> shall be set to 3600.</li>
+</ul>
+<p>
+Example:
+</p>
+<pre>
+   table = [0  0
+            1  0
+            1  1
+            2  4
+            3  9
+            4 16]
+If, e.g., time = 1.0, the output y =  0.0 (before event), 1.0 (after event)
+    e.g., time = 1.5, the output y =  2.5,
+    e.g., time = 2.0, the output y =  4.0,
+    e.g., time = 5.0, the output y = 23.0 (i.e., extrapolation).
+</pre>
+
+<p>
+<img src=\"modelica://Modelica/Resources/Images/Blocks/Sources/TimeTable.png\"
+     alt=\"TimeTable.png\">
+</p>
+
+</html>",     revisions="<html>
+<h4>Release Notes</h4>
+<ul>
+<li><i>Oct. 21, 2002</i>
+       by Christian Schweiger:<br>
+       Corrected interface from
+<pre>
+    parameter Real table[:, :]=[0, 0; 1, 1; 2, 4];
+</pre>
+       to
+<pre>
+    parameter Real table[:, <b>2</b>]=[0, 0; 1, 1; 2, 4];
+</pre>
+       </li>
+<li><i>Nov. 7, 1999</i>
+       by <a href=\"http://www.robotic.dlr.de/Martin.Otter/\">Martin Otter</a>:<br>
+       Realized.</li>
+</ul>
+</html>"));
+      end TimeTable;
       annotation (Documentation(info="<html>
 <p>
 This package contains <b>source</b> components, i.e., blocks which
@@ -542,6 +1322,42 @@ usually requires a trimming calculation.
 </ul>
 </html>"));
     end Sources;
+
+    package Types
+    "Library of constants and types with choices, especially to build menus"
+      extends Modelica.Icons.TypesPackage;
+
+      type Init = enumeration(
+          NoInit
+            "No initialization (start values are used as guess values with fixed=false)",
+          SteadyState
+            "Steady state initialization (derivatives of states are zero)",
+          InitialState "Initialization with initial states",
+          InitialOutput
+            "Initialization with initial outputs (and steady state of the states if possible)")
+        "Enumeration defining initialization of a block" annotation (Evaluate=true,
+        Documentation(info="<html>
+  <p>The following initialization alternatives are available:</p>
+  <dl>
+    <dt><code><strong>NoInit</strong></code></dt>
+      <dd>No initialization (start values are used as guess values with <code>fixed=false</code>)</dd>
+    <dt><code><strong>SteadyState</strong></code></dt>
+      <dd>Steady state initialization (derivatives of states are zero)</dd>
+    <dt><code><strong>InitialState</strong></code></dt>
+      <dd>Initialization with initial states</dd>
+    <dt><code><strong>InitialOutput</strong></code></dt>
+      <dd>Initialization with initial outputs (and steady state of the states if possible)</dd>
+  </dl>
+</html>"));
+      annotation (Documentation(info="<html>
+<p>
+In this package <b>types</b>, <b>constants</b> and <b>external objects</b> are defined that are used
+in library Modelica.Blocks. The types have additional annotation choices
+definitions that define the menus to be built up in the graphical
+user interface when the type is used as parameter in a declaration.
+</p>
+</html>"));
+    end Types;
 
     package Icons "Icons for Blocks"
         extends Modelica.Icons.IconsPackage;
@@ -820,11 +1636,408 @@ Copyright &copy; 1998-2016, Modelica Association and DLR.
 </html>"));
   end Math;
 
+  package Utilities
+  "Library of utility functions dedicated to scripting (operating on files, streams, strings, system)"
+    extends Modelica.Icons.Package;
+
+    package Files "Functions to work with files and directories"
+      extends Modelica.Icons.Package;
+
+    function removeFile "Remove file (ignore call, if it does not exist)"
+      extends Modelica.Icons.Function;
+      input String fileName "Name of file that should be removed";
+      protected
+      Types.FileType fileType = Modelica.Utilities.Internal.FileSystem.stat(
+                                              fileName);
+    algorithm
+      if fileType == Types.FileType.RegularFile then
+         Streams.close(fileName);
+         Modelica.Utilities.Internal.FileSystem.removeFile(
+                             fileName);
+      elseif fileType == Types.FileType.Directory then
+         Streams.error("File \"" + fileName + "\" should be removed.\n" +
+                       "This is not possible, because it is a directory");
+      elseif fileType == Types.FileType.SpecialFile then
+         Streams.error("File \"" + fileName + "\" should be removed.\n" +
+                       "This is not possible, because it is a special file (pipe, device, etc.)");
+      end if;
+
+      annotation (__ModelicaAssociation_Impure=true,
+    Documentation(info="<html>
+<h4>Syntax</h4>
+<blockquote><pre>
+Files.<b>removeFile</b>(fileName);
+</pre></blockquote>
+<h4>Description</h4>
+<p>
+Removes the file \"fileName\". If \"fileName\" does not exist,
+the function call is ignored. If \"fileName\" exists but is
+no regular file (e.g., directory, pipe, device, etc.) an
+error is triggered.
+</p>
+<p>
+This function is silent, i.e., it does not print a message.
+</p>
+</html>"));
+    end removeFile;
+        annotation (
+    Documentation(info="<html>
+<p>
+This package contains functions to work with files and directories.
+As a general convention of this package, '/' is used as directory
+separator both for input and output arguments of all functions.
+For example:
+</p>
+<pre>
+   exist(\"Modelica/Mechanics/Rotational.mo\");
+</pre>
+<p>
+The functions provide the mapping to the directory separator of the
+underlying operating system. Note, that on Windows system the usage
+of '\\' as directory separator would be inconvenient, because this
+character is also the escape character in Modelica and C Strings.
+</p>
+<p>
+In the table below an example call to every function is given:
+</p>
+<table border=1 cellspacing=0 cellpadding=2>
+  <tr><th><b><i>Function/type</i></b></th><th><b><i>Description</i></b></th></tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Files.list\">list</a>(name)</td>
+      <td valign=\"top\"> List content of file or of directory.</td>
+  </tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Files.copy\">copy</a>(oldName, newName)<br>
+          <a href=\"modelica://Modelica.Utilities.Files.copy\">copy</a>(oldName, newName, replace=false)</td>
+      <td valign=\"top\"> Generate a copy of a file or of a directory.</td>
+  </tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Files.move\">move</a>(oldName, newName)<br>
+          <a href=\"modelica://Modelica.Utilities.Files.move\">move</a>(oldName, newName, replace=false)</td>
+      <td valign=\"top\"> Move a file or a directory to another place.</td>
+  </tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Files.remove\">remove</a>(name)</td>
+      <td valign=\"top\"> Remove file or directory (ignore call, if it does not exist).</td>
+  </tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Files.removeFile\">removeFile</a>(name)</td>
+      <td valign=\"top\"> Remove file (ignore call, if it does not exist)</td>
+  </tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Files.createDirectory\">createDirectory</a>(name)</td>
+      <td valign=\"top\"> Create directory (if directory already exists, ignore call).</td>
+  </tr>
+  <tr><td valign=\"top\">result = <a href=\"modelica://Modelica.Utilities.Files.exist\">exist</a>(name)</td>
+      <td valign=\"top\"> Inquire whether file or directory exists.</td>
+  </tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Files.assertNew\">assertNew</a>(name,message)</td>
+      <td valign=\"top\"> Trigger an assert, if a file or directory exists.</td>
+  </tr>
+  <tr><td valign=\"top\">fullName = <a href=\"modelica://Modelica.Utilities.Files.fullPathName\">fullPathName</a>(name)</td>
+      <td valign=\"top\"> Get full path name of file or directory name.</td>
+  </tr>
+  <tr><td valign=\"top\">(directory, name, extension) = <a href=\"modelica://Modelica.Utilities.Files.splitPathName\">splitPathName</a>(name)</td>
+      <td valign=\"top\"> Split path name in directory, file name kernel, file name extension.</td>
+  </tr>
+  <tr><td valign=\"top\">fileName = <a href=\"modelica://Modelica.Utilities.Files.temporaryFileName\">temporaryFileName</a>()</td>
+      <td valign=\"top\"> Return arbitrary name of a file that does not exist<br>
+           and is in a directory where access rights allow to <br>
+           write to this file (useful for temporary output of files).</td>
+  </tr>
+</table>
+</html>"));
+    end Files;
+
+    package Streams "Read from files and write to files"
+      extends Modelica.Icons.Package;
+
+      function print "Print string to terminal or file"
+        extends Modelica.Icons.Function;
+        input String string="" "String to be printed";
+        input String fileName=""
+          "File where to print (empty string is the terminal)"
+                     annotation(Dialog(saveSelector(filter="Text files (*.txt)",
+                            caption="Text file to store the output of print(..)")));
+      external "C" ModelicaInternal_print(string, fileName) annotation(Library="ModelicaExternalC");
+
+        annotation (__ModelicaAssociation_Impure=true, Documentation(info=
+                       "<html>
+<h4>Syntax</h4>
+<blockquote><pre>
+Streams.<b>print</b>(string);
+Streams.<b>print</b>(string,fileName);
+</pre></blockquote>
+<h4>Description</h4>
+<p>
+Function <b>print</b>(..) opens automatically the given file, if
+it is not yet open. If the file does not exist, it is created.
+If the file does exist, the given string is appended to the file.
+If this is not desired, call \"Files.remove(fileName)\" before calling print
+(\"remove(..)\" is silent, if the file does not exist).
+The Modelica environment may close the file whenever appropriate.
+This can be enforced by calling <b>Streams.close</b>(fileName).
+After every call of \"print(..)\" a \"new line\" is printed automatically.
+</p>
+<h4>Example</h4>
+<blockquote><pre>
+  Streams.print(\"x = \" + String(x));
+  Streams.print(\"y = \" + String(y));
+  Streams.print(\"x = \" + String(y), \"mytestfile.txt\");
+</pre></blockquote>
+<h4>See also</h4>
+<p>
+<a href=\"modelica://Modelica.Utilities.Streams\">Streams</a>,
+<a href=\"modelica://Modelica.Utilities.Streams.error\">Streams.error</a>,
+<a href=\"modelica://ModelicaReference.Operators.'String()'\">ModelicaReference.Operators.'String()'</a>
+</p>
+</html>"));
+      end print;
+
+      function error "Print error message and cancel all actions"
+        extends Modelica.Icons.Function;
+        input String string "String to be printed to error message window";
+        external "C" ModelicaError(string) annotation(Library="ModelicaExternalC");
+        annotation (Documentation(info="<html>
+<h4>Syntax</h4>
+<blockquote><pre>
+Streams.<b>error</b>(string);
+</pre></blockquote>
+<h4>Description</h4>
+<p>
+Print the string \"string\" as error message and
+cancel all actions. Line breaks are characterized
+by \"\\n\" in the string.
+</p>
+<h4>Example</h4>
+<blockquote><pre>
+  Streams.error(\"x (= \" + String(x) + \")\\nhas to be in the range 0 .. 1\");
+</pre></blockquote>
+<h4>See also</h4>
+<p>
+<a href=\"modelica://Modelica.Utilities.Streams\">Streams</a>,
+<a href=\"modelica://Modelica.Utilities.Streams.print\">Streams.print</a>,
+<a href=\"modelica://ModelicaReference.Operators.'String()'\">ModelicaReference.Operators.'String()'</a>
+</p>
+</html>"));
+      end error;
+
+      function close "Close file"
+        extends Modelica.Icons.Function;
+        input String fileName "Name of the file that shall be closed"
+                     annotation(Dialog(loadSelector(filter="Text files (*.txt)",
+                            caption="Close text file")));
+        external "C" ModelicaStreams_closeFile(fileName) annotation(Library="ModelicaExternalC");
+        annotation (__ModelicaAssociation_Impure=true, Documentation(info=
+                       "<html>
+<h4>Syntax</h4>
+<blockquote><pre>
+Streams.<b>close</b>(fileName)
+</pre></blockquote>
+<h4>Description</h4>
+<p>
+Close file if it is open. Ignore call if
+file is already closed or does not exist.
+</p>
+</html>"));
+      end close;
+      annotation (
+        Documentation(info="<html>
+<h4>Library content</h4>
+<p>
+Package <b>Streams</b> contains functions to input and output strings
+to a message window or on files, as well as reading matrices from file
+and writing matrices to file. Note that a string is interpreted
+and displayed as html text (e.g., with print(..) or error(..))
+if it is enclosed with the Modelica html quotation, e.g.,
+</p>
+<blockquote><p>
+string = \"&lt;html&gt; first line &lt;br&gt; second line &lt;/html&gt;\".
+</p></blockquote>
+<p>
+It is a quality of implementation, whether (a) all tags of html are supported
+or only a subset, (b) how html tags are interpreted if the output device
+does not allow to display formatted text.
+</p>
+<p>
+In the table below an example call to every function is given:
+</p>
+<table border=1 cellspacing=0 cellpadding=2>
+  <tr><th><b><i>Function/type</i></b></th><th><b><i>Description</i></b></th></tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Streams.print\">print</a>(string)<br>
+          <a href=\"modelica://Modelica.Utilities.Streams.print\">print</a>(string,fileName)</td>
+      <td valign=\"top\"> Print string \"string\" or vector of strings to message window or on
+           file \"fileName\".</td>
+  </tr>
+  <tr><td valign=\"top\">stringVector =
+         <a href=\"modelica://Modelica.Utilities.Streams.readFile\">readFile</a>(fileName)</td>
+      <td valign=\"top\"> Read complete text file and return it as a vector of strings.</td>
+  </tr>
+  <tr><td valign=\"top\">(string, endOfFile) =
+         <a href=\"modelica://Modelica.Utilities.Streams.readLine\">readLine</a>(fileName, lineNumber)</td>
+      <td valign=\"top\">Returns from the file the content of line lineNumber.</td>
+  </tr>
+  <tr><td valign=\"top\">lines =
+         <a href=\"modelica://Modelica.Utilities.Streams.countLines\">countLines</a>(fileName)</td>
+      <td valign=\"top\">Returns the number of lines in a file.</td>
+  </tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Streams.error\">error</a>(string)</td>
+      <td valign=\"top\"> Print error message \"string\" to message window
+           and cancel all actions</td>
+  </tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Streams.close\">close</a>(fileName)</td>
+      <td valign=\"top\"> Close file if it is still open. Ignore call if
+           file is already closed or does not exist. </td>
+  </tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Streams.readMatrixSize\">readMatrixSize</a>(fileName, matrixName)</td>
+      <td valign=\"top\"> Read dimensions of a Real matrix from a MATLAB MAT file. </td></tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Streams.readRealMatrix\">readRealMatrix</a>(fileName, matrixName, nrow, ncol)</td>
+      <td valign=\"top\"> Read a Real matrix from a MATLAB MAT file. </td></tr>
+  <tr><td valign=\"top\"><a href=\"modelica://Modelica.Utilities.Streams.writeRealMatrix\">writeRealMatrix</a>(fileName, matrixName, matrix, append, format)</td>
+      <td valign=\"top\"> Write Real matrix to a MATLAB MAT file. </td></tr>
+</table>
+<p>
+Use functions <b>scanXXX</b> from package
+<a href=\"modelica://Modelica.Utilities.Strings\">Strings</a>
+to parse a string.
+</p>
+<p>
+If Real, Integer or Boolean values shall be printed
+or used in an error message, they have to be first converted
+to strings with the builtin operator
+<a href=\"modelica://ModelicaReference.Operators.'String()'\">ModelicaReference.Operators.'String()'</a>(...).
+Example:
+</p>
+<pre>
+  <b>if</b> x &lt; 0 <b>or</b> x &gt; 1 <b>then</b>
+     Streams.error(\"x (= \" + String(x) + \") has to be in the range 0 .. 1\");
+  <b>end if</b>;
+</pre>
+</html>"));
+    end Streams;
+
+    package Types "Type definitions used in package Modelica.Utilities"
+      extends Modelica.Icons.TypesPackage;
+
+      type FileType = enumeration(
+          NoFile "No file exists",
+          RegularFile "Regular file",
+          Directory "Directory",
+          SpecialFile "Special file (pipe, FIFO, device, etc.)")
+        "Enumeration defining the type of a file";
+      annotation (Documentation(info="<html>
+<p>
+This package contains type definitions used in Modelica.Utilities.
+</p>
+
+</html>"));
+    end Types;
+
+    package Internal
+    "Internal components that a user should usually not directly utilize"
+      extends Modelica.Icons.InternalPackage;
+
+    package FileSystem
+      "Internal package with external functions as interface to the file system"
+     extends Modelica.Icons.InternalPackage;
+
+      function stat "Inquire file information (POSIX function 'stat')"
+        extends Modelica.Icons.Function;
+        input String name "Name of file, directory, pipe etc.";
+        output Types.FileType fileType "Type of file";
+      external "C" fileType = ModelicaInternal_stat(name) annotation(Library="ModelicaExternalC");
+      annotation(__ModelicaAssociation_Impure=true);
+      end stat;
+
+      function removeFile "Remove existing file (C function 'remove')"
+        extends Modelica.Icons.Function;
+        input String fileName "File to be removed";
+      external "C" ModelicaInternal_removeFile(fileName) annotation(Library="ModelicaExternalC");
+      annotation(__ModelicaAssociation_Impure=true);
+      end removeFile;
+      annotation (
+    Documentation(info="<html>
+<p>
+Package <b>Internal.FileSystem</b> is an internal package that contains
+low level functions as interface to the file system.
+These functions should not be called directly in a scripting
+environment since more convenient functions are provided
+in packages Files and Systems.
+</p>
+<p>
+Note, the functions in this package are direct interfaces to
+functions of POSIX and of the standard C library. Errors
+occurring in these functions are treated by triggering
+a Modelica assert. Therefore, the functions in this package
+return only for a successful operation. Furthermore, the
+representation of a string is hidden by this interface,
+especially if the operating system supports Unicode characters.
+</p>
+</html>"));
+    end FileSystem;
+    end Internal;
+      annotation (
+  Icon(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}), graphics={
+      Polygon(
+        origin={1.3835,-4.1418},
+        rotation=45.0,
+        fillColor={64,64,64},
+        pattern=LinePattern.None,
+        fillPattern=FillPattern.Solid,
+        points={{-15.0,93.333},{-15.0,68.333},{0.0,58.333},{15.0,68.333},{15.0,93.333},{20.0,93.333},{25.0,83.333},{25.0,58.333},{10.0,43.333},{10.0,-41.667},{25.0,-56.667},{25.0,-76.667},{10.0,-91.667},{0.0,-91.667},{0.0,-81.667},{5.0,-81.667},{15.0,-71.667},{15.0,-61.667},{5.0,-51.667},{-5.0,-51.667},{-15.0,-61.667},{-15.0,-71.667},{-5.0,-81.667},{0.0,-81.667},{0.0,-91.667},{-10.0,-91.667},{-25.0,-76.667},{-25.0,-56.667},{-10.0,-41.667},{-10.0,43.333},{-25.0,58.333},{-25.0,83.333},{-20.0,93.333}}),
+      Polygon(
+        origin={10.1018,5.218},
+        rotation=-45.0,
+        fillColor={255,255,255},
+        fillPattern=FillPattern.Solid,
+        points={{-15.0,87.273},{15.0,87.273},{20.0,82.273},{20.0,27.273},{10.0,17.273},{10.0,7.273},{20.0,2.273},{20.0,-2.727},{5.0,-2.727},{5.0,-77.727},{10.0,-87.727},{5.0,-112.727},{-5.0,-112.727},{-10.0,-87.727},{-5.0,-77.727},{-5.0,-2.727},{-20.0,-2.727},{-20.0,2.273},{-10.0,7.273},{-10.0,17.273},{-20.0,27.273},{-20.0,82.273}})}),
+  Documentation(info="<html>
+<p>
+This package contains Modelica <b>functions</b> that are
+especially suited for <b>scripting</b>. The functions might
+be used to work with strings, read data from file, write data
+to file or copy, move and remove files.
+</p>
+<p>
+For an introduction, have especially a look at:
+</p>
+<ul>
+<li> <a href=\"modelica://Modelica.Utilities.UsersGuide\">Modelica.Utilities.User's Guide</a>
+     discusses the most important aspects of this library.</li>
+<li> <a href=\"modelica://Modelica.Utilities.Examples\">Modelica.Utilities.Examples</a>
+     contains examples that demonstrate the usage of this library.</li>
+</ul>
+<p>
+The following main sublibraries are available:
+</p>
+<ul>
+<li> <a href=\"modelica://Modelica.Utilities.Files\">Files</a>
+     provides functions to operate on files and directories, e.g.,
+     to copy, move, remove files.</li>
+<li> <a href=\"modelica://Modelica.Utilities.Streams\">Streams</a>
+     provides functions to read from files and write to files.</li>
+<li> <a href=\"modelica://Modelica.Utilities.Strings\">Strings</a>
+     provides functions to operate on strings. E.g.
+     substring, find, replace, sort, scanToken.</li>
+<li> <a href=\"modelica://Modelica.Utilities.System\">System</a>
+     provides functions to interact with the environment.
+     E.g., get or set the working directory or environment
+     variables and to send a command to the default shell.</li>
+</ul>
+
+<p>
+Copyright &copy; 1998-2016, Modelica Association, DLR, and Dassault Syst&egrave;mes AB.
+</p>
+
+<p>
+<i>This Modelica package is <u>free</u> software and the use is completely at <u>your own risk</u>; it can be redistributed and/or modified under the terms of the Modelica License 2. For license conditions (including the disclaimer of warranty) see <a href=\"modelica://Modelica.UsersGuide.ModelicaLicense2\">Modelica.UsersGuide.ModelicaLicense2</a> or visit <a href=\"https://www.modelica.org/licenses/ModelicaLicense2\"> https://www.modelica.org/licenses/ModelicaLicense2</a>.</i>
+</p>
+
+</html>"));
+  end Utilities;
+
   package Constants
   "Library of mathematical constants and constants of nature (e.g., pi, eps, R, sigma)"
     import SI = Modelica.SIunits;
     import NonSI = Modelica.SIunits.Conversions.NonSIunits;
     extends Modelica.Icons.Package;
+
+    final constant Real eps=ModelicaServices.Machine.eps
+      "Biggest number such that 1.0 + eps = 1.0";
 
     final constant SI.FaradayConstant F = 9.648533289e4
       "Faraday constant, C/mol (previous value: 9.64853399e4)";
@@ -1018,6 +2231,29 @@ Copyright &copy; 1998-2016, Modelica Association and DLR.
 </html>"));
     end SourcesPackage;
 
+    partial package TypesPackage "Icon for packages containing type definitions"
+      extends Modelica.Icons.Package;
+      annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,
+                -100},{100,100}}), graphics={Polygon(
+              origin={-12.167,-23},
+              fillColor={128,128,128},
+              pattern=LinePattern.None,
+              fillPattern=FillPattern.Solid,
+              points={{12.167,65},{14.167,93},{36.167,89},{24.167,20},{4.167,-30},
+                  {14.167,-30},{24.167,-30},{24.167,-40},{-5.833,-50},{-15.833,
+                  -30},{4.167,20},{12.167,65}},
+              smooth=Smooth.Bezier,
+              lineColor={0,0,0}), Polygon(
+              origin={2.7403,1.6673},
+              fillColor={128,128,128},
+              pattern=LinePattern.None,
+              fillPattern=FillPattern.Solid,
+              points={{49.2597,22.3327},{31.2597,24.3327},{7.2597,18.3327},{-26.7403,
+                10.3327},{-46.7403,14.3327},{-48.7403,6.3327},{-32.7403,0.3327},{-6.7403,
+                4.3327},{33.2597,14.3327},{49.2597,14.3327},{49.2597,22.3327}},
+              smooth=Smooth.Bezier)}));
+    end TypesPackage;
+
     partial package IconsPackage "Icon for packages containing icons"
       extends Modelica.Icons.Package;
       annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,
@@ -1038,6 +2274,68 @@ Copyright &copy; 1998-2016, Modelica Association and DLR.
               extent={{-12.5,-12.5},{12.5,12.5}},
               lineColor={0,0,0})}));
     end IconsPackage;
+
+    partial package InternalPackage
+      "Icon for an internal package (indicating that the package should not be directly utilized by user)"
+
+    annotation (
+      Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,
+              100}}), graphics={
+          Rectangle(
+            lineColor={215,215,215},
+            fillColor={255,255,255},
+            fillPattern=FillPattern.HorizontalCylinder,
+            extent={{-100,-100},{100,100}},
+            radius=25),
+          Rectangle(
+            lineColor={215,215,215},
+            extent={{-100,-100},{100,100}},
+            radius=25),
+          Ellipse(
+            extent={{-80,80},{80,-80}},
+            lineColor={215,215,215},
+            fillColor={215,215,215},
+            fillPattern=FillPattern.Solid),
+          Ellipse(
+            extent={{-55,55},{55,-55}},
+            lineColor={255,255,255},
+            fillColor={255,255,255},
+            fillPattern=FillPattern.Solid),
+          Rectangle(
+            extent={{-60,14},{60,-14}},
+            lineColor={215,215,215},
+            fillColor={215,215,215},
+            fillPattern=FillPattern.Solid,
+            rotation=45)}),
+      Documentation(info="<html>
+
+<p>
+This icon shall be used for a package that contains internal classes not to be
+directly utilized by a user.
+</p>
+</html>"));
+    end InternalPackage;
+
+    partial function Function "Icon for functions"
+
+      annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={
+            Text(
+              lineColor={0,0,255},
+              extent={{-150,105},{150,145}},
+              textString="%name"),
+            Ellipse(
+              lineColor = {108,88,49},
+              fillColor = {255,215,136},
+              fillPattern = FillPattern.Solid,
+              extent = {{-100,-100},{100,100}}),
+            Text(
+              lineColor={108,88,49},
+              extent={{-90.0,-90.0},{90.0,90.0}},
+              textString="f")}),
+    Documentation(info="<html>
+<p>This icon indicates Modelica functions.</p>
+</html>"));
+    end Function;
     annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,
                 -100},{100,100}}), graphics={Polygon(
               origin={-8.167,-17},
@@ -1205,9 +2503,13 @@ argument):</p>
         displayUnit="degC")
       "Absolute temperature (use type TemperatureDifference for relative temperatures)"                   annotation(absoluteValue=true);
 
+    type Temp_K = ThermodynamicTemperature;
+
     type Temperature = ThermodynamicTemperature;
 
     type ElectricCurrent = Real (final quantity="ElectricCurrent", final unit="A");
+
+    type Current = ElectricCurrent;
 
     type ElectricPotential = Real (final quantity="ElectricPotential", final unit=
            "V");
@@ -1606,14 +2908,14 @@ First implementation.
 
           record SpectraVolt100M36S =   DataSetPhotovoltaicModule (
             PEl_nominal =  100.0,
-            RPar = 12.529373276,
-            RSer = 0.0102582274069,
-            c1 = 0.00646373172774,
-            c2 = 1.29804373925e-05,
-            cs1 = 102.36896823,
-            cs2 = 0.000918183385567,
-            nCelSer = 9,
-            nCelPar = 4,
+            RPar = 7.85288688794,
+            RSer = 0.0137310098788,
+            c1 = 0.00504648450033,
+            c2 = 0.000152415667759,
+            cs1 = 34.4880957621,
+            cs2 = 0.00463314157705,
+            nCelSer = 36,
+            nCelPar = 1,
             height = 1.195,
             width = 0.545,
             Ik0 = 5.53,
@@ -1624,68 +2926,123 @@ First implementation.
         end PhotovoltaicModules;
 
         package PhotovoltaicIVCurves
-          "data sets with measured and theoretic IV curves for PV modules"
 
           record DataSetIVCurves
             parameter Modelica.SIunits.Temp_K TCel
               "Cell temperature during measurement";
-            parameter BuildingSystems.Interfaces.RadiantEnergyFluenceRateInput ITot
+            parameter Real ITot( unit = "W/m2")
               "Effective total solar irradiation on solar cell";
-            parameter Modelica.SIunits.Voltage U[0]
-              "Discrete voltage values of the characteristic curve";
-            parameter Modelica.SIunits.Current I[0]
-              "Discrete current values of the characteristic curve";
+            parameter Modelica.SIunits.Current UI[:,:]
+              "Discrete voltage values of the characteristic curve, from 0 to U10 and corresponding current";
           end DataSetIVCurves;
+
+          record SpectraVolt100M36S =    DataSetIVCurves (
+            TCel = 25.0,
+            ITot = 1000.0,
+            UI = [0,5.62;
+                  0.1,5.62;
+                  5,5.61;
+                  10,5.6;
+                  15,5.58;
+                  15.4,5.57;
+                  15.8,5.56;
+                  16.2,5.55;
+                  16.6,5.52;
+                  17,5.49;
+                  17.4,5.45;
+                  17.8,5.38;
+                  18.2,5.3;
+                  18.6,5.18;
+                  19,5.02;
+                  19.4,4.81;
+                  19.8,4.54;
+                  20.2,4.18;
+                  20.6,3.76;
+                  21,3.24;
+                  21.4,2.63;
+                  21.8,1.94;
+                  22.2,1.16;
+                  22.6,0.3;
+                  22.73,0]);
         end PhotovoltaicIVCurves;
       end Data;
 
       package Examples "Examples for photovoltaic component models"
         extends Modelica.Icons.ExamplesPackage;
 
-        model IVCurveGeneration
-          "Example to create IV curves for PV modules at constant radiation"
+        model IVCurveParameterOptimization
+          "Example to optimize PV Module paramters (Rser, Rpar, c1, c2, cs1, cs2) with GenOpt"
           extends Modelica.Icons.Example;
           BuildingSystems.Technologies.Photovoltaics.PVModules.PVModuleComplex pvField(
             angleDegAzi_constant=0.0,
-            redeclare Data.PhotovoltaicModules.SpectraVolt100M36S pvModuleData,
             nModPar=1,
             nModSer=1,
-            angleDegTil_constant=0)
+            angleDegTil_constant=0,
+          redeclare Data.PhotovoltaicModules.SpectraVolt100M36S pvModuleData)
             annotation (Placement(transformation(extent={{-56,34},{-36,54}})));
+          BuildingSystems.Technologies.Photovoltaics.Data.PhotovoltaicIVCurves.SpectraVolt100M36S IVcurve_ref
+             "measured IV curve from data";
           Modelica.Blocks.Math.UnitConversions.From_degC from_degC
             annotation (Placement(transformation(extent={{-60,68},{-52,76}})));
+          Climate.Sources.RadiationFixed constRadiation(IrrDir_constant=IVcurve_ref.ITot)
+            "direct horizontal radiation on module surface"
+            annotation (Placement(transformation(extent={{-80,52},{-64,68}})));
+          Modelica.Blocks.Sources.Constant constTemp(k=IVcurve_ref.TCel)
+            "Module temperature at test conditions"
+            annotation (Placement(transformation(extent={{-76,68},{-68,76}})));
+          Modelica.Blocks.Sources.TimeTable IVcurve_reference(table=IVcurve_ref.UI)
+            annotation (Placement(transformation(extent={{-24,18},{-32,26}})));
+          Modelica.Blocks.Sources.Constant constV(k=12)
+            "Module temperature at test conditions";
           Modelica.Blocks.Sources.Ramp increasVoltage(height=pvField.pvModuleData.Ul0,
               duration=pvField.pvModuleData.Ul0)
             "Increasing voltage until open circuit voltage"
-            annotation (Placement(transformation(extent={{-26,46},{-34,54}})));
-          Climate.Sources.RadiationFixed constRadiation(IrrDir_constant=1000)
-            "direct horizontal radiation on module surface"
-            annotation (Placement(transformation(extent={{-80,52},{-64,68}})));
-          Modelica.Blocks.Sources.Constant constTemp(k=25)
-            "Module temperature at test conditions"
-            annotation (Placement(transformation(extent={{-76,68},{-68,76}})));
+            annotation (Placement(transformation(extent={{-24,46},{-32,54}})));
+        Modelica.Blocks.Math.MultiSum ISum(k={1,-1}, nu=2)
+          annotation (Placement(transformation(extent={{-38,26},{-42,30}})));
+        Modelica.Blocks.Math.Product Idiff_sq
+          annotation (Placement(transformation(extent={{-46,26},{-50,30}})));
+        Modelica.Blocks.Math.Sqrt sqrt1
+          annotation (Placement(transformation(extent={{-58,26},{-62,30}})));
+        Modelica.Blocks.Continuous.Integrator Idiff_sum
+          annotation (Placement(transformation(extent={{-52,26},{-56,30}})));
+        Interfaces.GenOptInterface genOptInterface
+          annotation (Placement(transformation(extent={{-76,14},{-66,24}})));
         equation
           connect(pvField.TAmb, from_degC.y) annotation (Line(
               points={{-44,52},{-44,72},{-51.6,72}},
               color={0,0,0},
               smooth=Smooth.None));
-          connect(increasVoltage.y, pvField.UField) annotation (Line(points={{-34.4,50},
-                  {-34.4,50},{-40,50}}, color={0,0,127}));
 
           connect(constTemp.y, from_degC.u) annotation (Line(points={{-67.6,72},{-60.8,
-                  72},{-60.8,72}}, color={0,0,127}));
+                  72}},            color={0,0,127}));
           connect(pvField.radiationPort, constRadiation.radiationPort) annotation (Line(
                 points={{-46,52},{-46,52},{-46,60},{-67.2,60}}, color={244,125,35}));
-          annotation(Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,0},{-20,100}}), graphics={
-            Text(extent={{-60,22},{-60,18}},lineColor={0,0,255},fontSize=18,
-                  textString="IV curve generator for single selected module 
-(with 2 diode model)
-at constant temperature 
-and direct horizontal radiation
-")}),       experiment(StartTime=0.0, StopTime=3.1536e+007),
+        connect(increasVoltage.y, pvField.UField) annotation (Line(points={{
+                -32.4,50},{-32.4,50},{-40,50}}, color={0,0,127}));
+        connect(Idiff_sq.u1, ISum.y) annotation (Line(points={{-45.6,29.2},{-44,
+                29.2},{-44,28},{-42.34,28}}, color={0,0,127}));
+        connect(Idiff_sq.u2, ISum.y) annotation (Line(points={{-45.6,26.8},{-44,
+                26.8},{-44,28},{-42.34,28}}, color={0,0,127}));
+        connect(pvField.IField, ISum.u[1]) annotation (Line(points={{-40,48},{
+                -36,48},{-36,28.7},{-38,28.7}}, color={0,0,127}));
+        connect(IVcurve_reference.y, ISum.u[2]) annotation (Line(points={{-32.4,
+                22},{-36,22},{-36,27.3},{-38,27.3}}, color={0,0,127}));
+        connect(Idiff_sq.y, Idiff_sum.u)
+          annotation (Line(points={{-50.2,28},{-51.6,28}}, color={0,0,127}));
+        connect(Idiff_sum.y, sqrt1.u)
+          annotation (Line(points={{-56.2,28},{-57.6,28}}, color={0,0,127}));
+        connect(sqrt1.y, genOptInterface.costFunction) annotation (Line(points=
+                {{-62.2,28},{-68,28},{-71,28},{-71,23}}, color={0,0,127}));
+            annotation (Placement(transformation(extent={{-20,68},{-28,76}})),
+                     Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,0},{-20,100}}), graphics={
+            Text(extent={{-60,8},{-60,4}},  lineColor={0,0,255},fontSize=22,
+                  textString="Model to run with GenOpt to calculate 
+optimized PV module parameters.")}),
+            experiment(StopTime=22.73),
             __Dymola_Commands(file=
-                  "modelica://BuildingSystems/Resources/Scripts/Dymola/Technologies/Photovoltaics/Examples/IVCurveGeneration.mos"
-                "Simulate and plot"),
+                "Resources/Scripts/Dymola/Technologies/Photovoltaics/Examples/PVModuleParameterOpt.mos"
+              "Simulate and plot"),
         Documentation(info="<html>
 <p> This example tests the implementation of
 <a href=\"modelica://BuildingSystems.Technologies.Photovoltaics.PVModuleComplex\">
@@ -1699,7 +3056,7 @@ First implementation.
 </li>
 </ul>
 </html>"));
-        end IVCurveGeneration;
+        end IVCurveParameterOptimization;
       end Examples;
 
       package BaseClasses
@@ -2141,7 +3498,7 @@ First implementation.
                 =                                                               FillPattern.Solid,pattern=LinePattern.None)}),
       Diagram(coordinateSystem(preserveAspectRatio=true, extent={{-100,-100},{100,100}}), graphics={
       Text(extent={{-110,110},{110,50}},lineColor={0,0,255},textString="%name",
-              fillPattern =                                                                  FillPattern.Solid,fillColor={255,185,0}),
+                fillPattern =                                                                FillPattern.Solid,fillColor={255,185,0}),
       Ellipse(extent={{-40,40},{40,-40}},fillColor={255,128,0},fillPattern=FillPattern.Solid,pattern=LinePattern.None)}));
     end RadiationPort;
 
@@ -2169,7 +3526,8 @@ First implementation.
     connector Temp_KInput = Modelica.Blocks.Interfaces.RealInput(final quantity="ThermodynamicTemperature",final unit="K",min = 0.0, displayUnit="degC");
 
     connector Temp_KOutput = Modelica.Blocks.Interfaces.RealOutput(final quantity="ThermodynamicTemperature",final unit="K",min = 0.0, displayUnit="degC");
-    model GenOptInterface "Produces textual output files for GenOpt"
+
+    model GenOptInterface "Text file output for use with GenOpt"
       parameter String resultFileName = "result.txt"
         "File on which data is present";
       parameter String header = "Objective function value" "Header for result file";
@@ -2193,7 +3551,6 @@ First implementation.
         Modelica.Utilities.Streams.print("-------------------------------------------------", File);
         Modelica.Utilities.Streams.print("f(x):                       " +  realString(number=costFunction, minimumWidth=10, precision=20), File);
       end when;
-      annotation (conversion(noneFromVersion=""));
     end GenOptInterface;
   end Interfaces;
   annotation (
@@ -2230,7 +3587,8 @@ The web page for this library is
 </html>"));
 end BuildingSystems;
 
-model BuildingSystems_Technologies_Photovoltaics_Examples_IVCurveGeneration
- extends BuildingSystems.Technologies.Photovoltaics.Examples.IVCurveGeneration;
-  annotation(experiment(StopTime=20),                        uses(BuildingSystems(version="2.0.0-beta")));
-end BuildingSystems_Technologies_Photovoltaics_Examples_IVCurveGeneration;
+model BuildingSystems_Technologies_Photovoltaics_Examples_IVCurveParameterOptimization
+ extends BuildingSystems.Technologies.Photovoltaics.Examples.IVCurveParameterOptimization;
+  annotation(experiment(StopTime=22.73),uses(BuildingSystems(version="2.0.0-beta")));
+end
+  BuildingSystems_Technologies_Photovoltaics_Examples_IVCurveParameterOptimization;
