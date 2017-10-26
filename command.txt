@@ -1,0 +1,63 @@
+
+Vary{
+
+  Parameter{
+  Name = c1;
+  Min = 0.0000000001;
+  Ini = 0.0054;
+  Max = 0.01;
+  Step = 0.000001;
+  }
+  Parameter{
+  Name = c2;
+  Min = 0.0000000001;
+  Ini = 0.0007;
+  Max = 0.01;
+  Step = 0.000001;
+  }
+  Parameter{
+  Name = cs1;
+  Min = 0.000000001;
+  Ini = 0.75;
+  Max = 5;
+  Step = 0.0001;
+  }
+  Parameter{
+  Name = cs2;
+  Min = 0.00000000001;
+  Ini = 0.0035;
+  Max = 0.1;
+  Step =0.000001;
+  }
+  Parameter{
+  Name = RPar;
+  Min = 1;
+  Ini = 250;
+  Max = 1000;
+  Step = 0.1;
+  }
+  Parameter{
+  Name = RSer;
+  Min = 0.000000001;
+  Ini = 0.005;
+  Max = 0.1;
+  Step = 0.00001;
+  }
+}
+
+OptimizationSettings{
+  MaxIte = 10000;
+  MaxEqualResults = 1000;
+  WriteStepNumber = false;
+  UnitsOfExecution = 4;
+}
+
+
+Algorithm{
+ Main = GPSHookeJeeves;
+ MeshSizeDivider = 4;
+ InitialMeshSizeExponent = 0;
+ MeshSizeExponentIncrement = 1;
+ NumberOfStepReduction = 10;
+}
+
